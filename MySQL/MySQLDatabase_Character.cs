@@ -436,7 +436,7 @@ namespace MultiplayerARPG.MMO
                         TransactionUpdateCharacterState state = TransactionUpdateCharacterState.All;
                         await FillCharacterRelatesData(state, connection, transaction, character, null);
                         if (onCreateCharacter != null)
-                            onCreateCharacter.Invoke(connection, transaction, userId, character);
+                            await onCreateCharacter.Invoke(connection, transaction, userId, character);
                         await transaction.CommitAsync();
                     }
                     catch (System.Exception ex)
@@ -681,7 +681,7 @@ namespace MultiplayerARPG.MMO
 #endif
                 if (onGetCharacter != null)
                 {
-                    result = onGetCharacter.Invoke(
+                    result = await onGetCharacter.Invoke(
                         result,
                         withEquipWeapons,
                         withAttributes,
@@ -817,7 +817,7 @@ namespace MultiplayerARPG.MMO
                                 new MySqlParameter("@reserverId", character.Id));
                         }
                         if (onUpdateCharacter != null)
-                            onUpdateCharacter.Invoke(connection, transaction, state, character);
+                            await onUpdateCharacter.Invoke(connection, transaction, state, character);
                         await transaction.CommitAsync();
                     }
                     catch (System.Exception ex)
@@ -872,7 +872,7 @@ namespace MultiplayerARPG.MMO
                             await DeleteCharacterDataFloat32s(connection, transaction, "character_public_float32", id);
 
                             if (onDeleteCharacter != null)
-                                onDeleteCharacter.Invoke(connection, transaction, userId, id);
+                                await onDeleteCharacter.Invoke(connection, transaction, userId, id);
                             await transaction.CommitAsync();
                         }
                         catch (System.Exception ex)

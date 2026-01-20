@@ -1,9 +1,10 @@
+using Cysharp.Threading.Tasks;
 using System.Data.Common;
 
 namespace MultiplayerARPG.MMO
 {
-    public delegate PlayerCharacterData DbGetCharacterDelegate(
-        IPlayerCharacterData result,
+    public delegate UniTask<PlayerCharacterData> DbGetCharacterDelegate(
+        PlayerCharacterData result,
         bool withEquipWeapons,
         bool withAttributes,
         bool withSkills,
@@ -19,7 +20,7 @@ namespace MultiplayerARPG.MMO
         bool withPrivateCustomData,
         bool withPublicCustomData);
 
-    public delegate void DbCreateCharacterDelegate<TConnection, TTransaction>(
+    public delegate UniTask DbCreateCharacterDelegate<TConnection, TTransaction>(
         TConnection connection,
         TTransaction transaction,
         string userId,
@@ -27,7 +28,7 @@ namespace MultiplayerARPG.MMO
         where TConnection : DbConnection
         where TTransaction : DbTransaction;
 
-    public delegate void DbUpdateCharacterDelegate<TConnection, TTransaction>(
+    public delegate UniTask DbUpdateCharacterDelegate<TConnection, TTransaction>(
         TConnection connection,
         TTransaction transaction,
         TransactionUpdateCharacterState state,
@@ -35,7 +36,7 @@ namespace MultiplayerARPG.MMO
         where TConnection : DbConnection
         where TTransaction : DbTransaction;
 
-    public delegate void DbDeleteCharacterDelegate<TConnection, TTransaction>(
+    public delegate UniTask DbDeleteCharacterDelegate<TConnection, TTransaction>(
         TConnection connection,
         TTransaction transaction,
         string userId,

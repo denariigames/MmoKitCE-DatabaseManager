@@ -387,7 +387,7 @@ namespace MultiplayerARPG.MMO
                 FillSummonBuffs(transaction, characterData.Id, summonBuffs);
         }
 
-        public override UniTask CreateCharacter(string userId, IPlayerCharacterData character)
+        public override async UniTask CreateCharacter(string userId, IPlayerCharacterData character)
         {
             SqliteTransaction transaction = _connection.BeginTransaction();
             try
@@ -434,7 +434,7 @@ namespace MultiplayerARPG.MMO
                 TransactionUpdateCharacterState state = TransactionUpdateCharacterState.All;
                 FillCharacterRelatesData(state, transaction, character, null);
                 if (onCreateCharacter != null)
-                    onCreateCharacter.Invoke(_connection, transaction, userId, character);
+                    await onCreateCharacter.Invoke(_connection, transaction, userId, character);
                 transaction.Commit();
             }
             catch (System.Exception ex)
@@ -444,7 +444,6 @@ namespace MultiplayerARPG.MMO
                 transaction.Rollback();
             }
             transaction.Dispose();
-            return new UniTask();
         }
 
         private bool GetCharacter(SqliteDataReader reader, out PlayerCharacterData result)
@@ -521,7 +520,7 @@ namespace MultiplayerARPG.MMO
             return false;
         }
 
-        public override UniTask<PlayerCharacterData> GetCharacter(
+        public override async UniTask<PlayerCharacterData> GetCharacter(
             string id,
             bool withEquipWeapons = true,
             bool withAttributes = true,
@@ -677,7 +676,7 @@ namespace MultiplayerARPG.MMO
 #endif
                 if (onGetCharacter != null)
                 {
-                    result = onGetCharacter.Invoke(
+                    result = await onGetCharacter.Invoke(
                         result,
                         withEquipWeapons,
                         withAttributes,
@@ -695,7 +694,7 @@ namespace MultiplayerARPG.MMO
                         withPublicCustomData);
                 }
             }
-            return new UniTask<PlayerCharacterData>(result);
+            return result;
         }
 
         public override async UniTask<List<PlayerCharacterData>> GetCharacters(string userId)
@@ -716,7 +715,7 @@ namespace MultiplayerARPG.MMO
             return result;
         }
 
-        public override UniTask UpdateCharacter(TransactionUpdateCharacterState state, IPlayerCharacterData character, List<CharacterBuff> summonBuffs, bool deleteStorageReservation)
+        public override async UniTask UpdateCharacter(TransactionUpdateCharacterState state, IPlayerCharacterData character, List<CharacterBuff> summonBuffs, bool deleteStorageReservation)
         {
             SqliteTransaction transaction = _connection.BeginTransaction();
             try
@@ -809,7 +808,7 @@ namespace MultiplayerARPG.MMO
                         new SqliteParameter("@reserverId", character.Id));
                 }
                 if (onUpdateCharacter != null)
-                    onUpdateCharacter.Invoke(_connection, transaction, state, character);
+                    await onUpdateCharacter.Invoke(_connection, transaction, state, character);
                 transaction.Commit();
             }
             catch (System.Exception ex)
@@ -819,10 +818,9 @@ namespace MultiplayerARPG.MMO
                 transaction.Rollback();
             }
             transaction.Dispose();
-            return new UniTask();
         }
 
-        public override UniTask DeleteCharacter(string userId, string id)
+        public override async UniTask DeleteCharacter(string userId, string id)
         {
             object result = ExecuteScalar("SELECT COUNT(*) FROM characters WHERE id=@id AND userId=@userId",
                 new SqliteParameter("@id", id),
@@ -860,7 +858,7 @@ namespace MultiplayerARPG.MMO
                     DeleteCharacterDataFloat32s(transaction, "character_public_float32", id);
 
                     if (onDeleteCharacter != null)
-                        onDeleteCharacter.Invoke(_connection, transaction, userId, id);
+                        await onDeleteCharacter.Invoke(_connection, transaction, userId, id);
                     transaction.Commit();
                 }
                 catch (System.Exception ex)
@@ -871,7 +869,6 @@ namespace MultiplayerARPG.MMO
                 }
                 transaction.Dispose();
             }
-            return new UniTask();
         }
 
         public override UniTask<long> FindCharacterName(string characterName)
