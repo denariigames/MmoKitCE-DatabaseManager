@@ -1,23 +1,14 @@
-name: Build on Tag
+name: Build on Tag (Windows Only)
 
 on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:   # Optional: Allows manual trigger from Actions tab
+  workflow_dispatch:   # Allows manual testing from Actions tab
 
 jobs:
-  build:
+  build-windows:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - runtime: win-x64
-            os_name: windows
-            exe_name: UnityMultiplayerARPG_DatabaseManager.exe
-          - runtime: linux-x64
-            os_name: linux
-            exe_name: UnityMultiplayerARPG_DatabaseManager
 
     steps:
       - name: Checkout code
@@ -28,35 +19,26 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Restore dependencies
+      - name: Restore
         run: dotnet restore Core/UnityMultiplayerARPG_DatabaseManager.sln
 
-      - name: Publish ${{ matrix.runtime }} (Single File)
-        run: |
-          dotnet publish Core/UnityMultiplayerARPG_DatabaseManager.csproj \
-            --configuration Release \
-            --runtime ${{ matrix.runtime }} \
-            --self-contained true \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfExtract=true \
-            -p:PublishTrimmed=false \          # Change to true later if you test it works
-            --output publish/${{ matrix.runtime }}
+      - name: Publish Windows x64 (Single File)
+        run: dotnet publish Core/UnityMultiplayerARPG_DatabaseManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=false --output publish/windows-x64
 
-      - name: Create ZIP archive
+      - name: Create ZIP
         run: |
-          cd publish/${{ matrix.runtime }}
-          zip -r ../../${{ matrix.os_name }}-x64.zip .
+          cd publish/windows-x64
+          zip -r ../../windows-x64.zip .
           cd ../..
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os_name }}-x64
-          path: ${{ matrix.os_name }}-x64.zip
-          if-no-files-found: error
+          name: windows-x64
+          path: windows-x64.zip
 
   release:
-    needs: build
+    needs: build-windows
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -65,7 +47,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download artifacts
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -77,7 +59,5 @@ jobs:
           name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
-          files: |
-            artifacts/windows-x64/windows-x64.zip
-            artifacts/linux-x64/linux-x64.zip
+          files: artifacts/windows-x64/windows-x64.zip
           generate_release_notes: true
