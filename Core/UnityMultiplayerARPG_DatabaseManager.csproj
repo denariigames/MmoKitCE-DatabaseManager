@@ -51,9 +51,4 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Reference sibling projects -->
-    <ProjectReference Include="..\Database\Database.csproj" />
-    <ProjectReference Include="..\SharedData\SharedData.csproj" />
-  </ItemGroup>
 </Project>
