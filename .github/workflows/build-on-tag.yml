@@ -23,7 +23,15 @@ jobs:
         run: dotnet restore Core/UnityMultiplayerARPG_DatabaseManager.sln
 
       - name: Publish Windows x64 (Single File)
-        run: dotnet publish Core/UnityMultiplayerARPG_DatabaseManager.sln -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=false --output publish/windows-x64
+        run: |
+          dotnet publish Core/UnityMultiplayerARPG_DatabaseManager.sln \
+            -c Release \
+            -r win-x64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:PublishTrimmed=false \
+            --output publish/windows-x64
 
       - name: Create ZIP
         run: |
