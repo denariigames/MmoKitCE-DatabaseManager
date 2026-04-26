@@ -1,0 +1,83 @@
+name: Build on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:   # Optional: Allows manual trigger from Actions tab
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - runtime: win-x64
+            os_name: windows
+            exe_name: UnityMultiplayerARPG_DatabaseManager.exe
+          - runtime: linux-x64
+            os_name: linux
+            exe_name: UnityMultiplayerARPG_DatabaseManager
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Core/UnityMultiplayerARPG_DatabaseManager.sln
+
+      - name: Publish ${{ matrix.runtime }} (Single File)
+        run: |
+          dotnet publish Core/UnityMultiplayerARPG_DatabaseManager.csproj \
+            --configuration Release \
+            --runtime ${{ matrix.runtime }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:PublishTrimmed=false \          # Change to true later if you test it works
+            --output publish/${{ matrix.runtime }}
+
+      - name: Create ZIP archive
+        run: |
+          cd publish/${{ matrix.runtime }}
+          zip -r ../../${{ matrix.os_name }}-x64.zip .
+          cd ../..
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os_name }}-x64
+          path: ${{ matrix.os_name }}-x64.zip
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/windows-x64/windows-x64.zip
+            artifacts/linux-x64/linux-x64.zip
+          generate_release_notes: true
